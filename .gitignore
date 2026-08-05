@@ -1,0 +1,15 @@
+# Binaries
+/copilot-usage
+/copilot-usage-*
+*.exe
+*.out
+*.test
+
+# Coverage
+coverage.out
+coverage.html
+
+# OS and editor files
+.DS_Store
+.idea/
+.vscode/
