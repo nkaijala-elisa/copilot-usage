@@ -37,6 +37,12 @@ go install github.com/Antupis/copilot-usage@latest
 
 The resulting `copilot-usage` binary is installed into Go's binary directory. Ensure that directory is on your `PATH` before running it.
 
+Or, from a checkout, build and install into `~/.local/bin` (override with `PREFIX`, e.g. `make install PREFIX=/usr/local`). Run `git pull && make install` to update:
+
+```sh
+make install
+```
+
 ## Run
 
 From this directory:
