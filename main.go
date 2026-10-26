@@ -32,6 +32,7 @@ type config struct {
 	BarWidth int
 	ASCII    bool
 	Once     bool
+	Oneline  bool
 }
 
 type apiResponse struct {
@@ -190,6 +191,7 @@ func parseConfig(args []string, stderr io.Writer) (config, error) {
 	flags.IntVar(&result.BarWidth, "width", 0, "progress bar width (default: based on COLUMNS, or 40)")
 	flags.BoolVar(&result.ASCII, "ascii", false, "use ASCII progress bars instead of Unicode blocks")
 	flags.BoolVar(&result.Once, "once", false, "query once, print the dashboard, and exit")
+	flags.BoolVar(&result.Oneline, "oneline", false, "query once, print a single line of key percentages, and exit")
 	flags.Usage = func() {
 		fmt.Fprintln(stderr, "Usage: copilot-usage [options]")
 		fmt.Fprintln(stderr, "")
@@ -198,6 +200,9 @@ func parseConfig(args []string, stderr io.Writer) (config, error) {
 
 	if err := flags.Parse(args); err != nil {
 		return config{}, err
+	}
+	if result.Oneline {
+		result.Once = true
 	}
 	if flags.NArg() != 0 {
 		return config{}, fmt.Errorf("unexpected arguments: %s", strings.Join(flags.Args(), " "))
@@ -331,6 +336,10 @@ func runOnce(ctx context.Context, fetcher usageFetcher, cfg config, out io.Write
 	}
 	if data.FetchedAt.IsZero() {
 		data.FetchedAt = time.Now().UTC()
+	}
+	if cfg.Oneline {
+		_, err := io.WriteString(out, onelineText(data, time.Now()))
+		return err
 	}
 	state := appState{
 		Data:          &data,
@@ -471,6 +480,21 @@ func dashboardText(state appState, now time.Time, cfg config) string {
 		output.WriteString("Press Ctrl+C to quit\n")
 	}
 	return output.String()
+}
+
+// onelineText returns usage, month elapsed, weekly target and projected
+// period-end usage on one line, for status bars and scripts.
+func onelineText(data usageData, now time.Time) string {
+	monthPercent, periodStart, _, _ := monthProgress(now, data.ResetAt)
+	weekPercent, _ := weekBudget(now, data.ResetAt)
+	used, projected := "n/a", "n/a"
+	if ratio, ok := usageRatio(data.Quota); ok && data.Quota.HasQuota {
+		used = fmt.Sprintf("%.1f%%", ratio*100)
+		if value, ok := projectUsage(ratio, monthPercent, 1, now.UTC().Sub(periodStart)); ok {
+			projected = fmt.Sprintf("%.1f%%", value*100)
+		}
+	}
+	return fmt.Sprintf("U %s M %.1f%% W %.1f%% P %s\n", used, monthPercent*100, weekPercent*100, projected)
 }
 
 func monthProgress(now, resetAt time.Time) (float64, time.Time, time.Time, bool) {

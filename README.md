@@ -81,6 +81,7 @@ Press `Ctrl+C` to quit. The cursor and terminal formatting are restored when the
 -width number        progress bar width, default from COLUMNS or 40
 -ascii               use ASCII bars instead of Unicode blocks
 -once                query once, print the dashboard, and exit
+-oneline             query once, print one line of percentages, and exit
 ```
 
 Examples:
@@ -92,6 +93,8 @@ copilot-usage -once
 ```
 
 `-once` is useful for shell scripts and checks that do not need a continuously refreshing screen.
+
+`-oneline` prints premium usage, month elapsed, weekly target and projected period-end usage, e.g. `U 66.2% M 81.6% W 99.9% P 81.1%` (`n/a` when unavailable), for status bars and scripts, such as a Polybar `custom/script` module (`exec = copilot-usage -oneline`, `interval = 300`).
 
 ## Development
 

@@ -399,3 +399,33 @@ func TestDashboardTextProjections(t *testing.T) {
 		t.Fatalf("unlimited projection not unavailable:\n%s", text)
 	}
 }
+
+func TestOnelineText(t *testing.T) {
+	data := usageData{
+		ResetAt: time.Date(2026, time.November, 1, 0, 0, 0, 0, time.UTC),
+		Quota: quota{
+			HasQuota:    true,
+			CreditsUsed: 24600,
+			Entitlement: 60000,
+		},
+	}
+	now := time.Date(2026, time.October, 12, 12, 0, 0, 0, time.UTC)
+	if got, want := onelineText(data, now), "U 41.0% M 37.1% W 57.9% P 110.5%\n"; got != want {
+		t.Fatalf("onelineText() = %q, want %q", got, want)
+	}
+
+	early := time.Date(2026, time.October, 1, 6, 0, 0, 0, time.UTC)
+	if got, want := onelineText(data, early), "U 41.0% M 0.8% W 12.8% P n/a\n"; got != want {
+		t.Fatalf("early onelineText() = %q, want %q", got, want)
+	}
+
+	unlimited := usageData{ResetAt: data.ResetAt, Quota: quota{HasQuota: true, Unlimited: true}}
+	if got, want := onelineText(unlimited, now), "U n/a M 37.1% W 57.9% P n/a\n"; got != want {
+		t.Fatalf("unlimited onelineText() = %q, want %q", got, want)
+	}
+
+	cfg, err := parseConfig([]string{"-oneline"}, nil)
+	if err != nil || !cfg.Oneline || !cfg.Once {
+		t.Fatalf("parseConfig(-oneline) = %+v, %v", cfg, err)
+	}
+}
